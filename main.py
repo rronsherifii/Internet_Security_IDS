@@ -16,7 +16,7 @@ if __name__ == "__main__":
     print("Available interfaces:", interfaces)
 
     if interfaces:
-        interface = 'Wi-Fi' #next(iter(interfaces))  # Choose the first interface
+        interface = 'WiFi' #next(iter(interfaces))  # Choose the first interface
         print("Sniffing on interface:", interface)
 
         packets = sniff_icmp_packets(interface)
