@@ -11,8 +11,8 @@ def send_http_requests(server_url, interval):
         time.sleep(interval)
 
 
-if __name__ == "__main__":
-    server_url = "http://localhost:8000" #EC2 aws-instance public ip address
-    interval = 0.1  # Interval between each HTTP request in seconds
-
-    send_http_requests(server_url, interval)
+# if __name__ == "__main__":
+#     server_url = "http://localhost:8000" #EC2 aws-instance public ip address
+#     interval = 0.1  # Interval between each HTTP request in seconds
+#
+#     send_http_requests(server_url, interval)

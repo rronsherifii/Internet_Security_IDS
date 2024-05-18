@@ -23,18 +23,13 @@ def send_icmp_packets(destination_ip, duration):
     end_time = start_time + duration
 
     my_ip_address = get_wifi_ip()
-    print("My ip address is " + my_ip_address)
+    # print("My ip address is " + my_ip_address)
 
     while time.time() < end_time:
         # Send ICMP echo request
         ping3.ping(destination_ip)
 
         # Wait for a short interval between packets
-        time.sleep(0.5)
+        time.sleep(1)
 
 
-
-
-# Sending attack
-destination_ip = input("Enter destination ip:")
-send_icmp_packets(destination_ip,20)
