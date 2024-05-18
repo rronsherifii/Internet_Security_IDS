@@ -1,4 +1,6 @@
-import socket, sys, threading, time
+import socket
+import threading
+import time
 from tkinter import *
 
 # ==== Scan Vars ====

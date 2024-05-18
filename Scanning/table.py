@@ -1,8 +1,9 @@
+import threading
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
+from IDS import *
 
-from Scanning.IDS import print_database
 
 def format_timestamp(timestamp):
     timestamp = int(timestamp)
@@ -23,13 +24,14 @@ def refresh_table():
             tree.insert("", "end", values=row)
     root.after(3500, refresh_table)
 
+
 def create_gui():
     global tree, root
     root = tk.Tk()
     root.title("Host Based Intrusion Detection System")
 
     tree = ttk.Treeview(root)
-    tree["columns"] = ("ID","Attack Type", "Timestamp", "Attacker IP", "Interface")
+    tree["columns"] = ("ID", "Attack Type", "Timestamp", "Attacker IP", "Interface")
     tree.heading("ID", text="ID", anchor=tk.CENTER)
     tree.column("ID", minwidth=20, width=20)
     tree.heading("Attack Type", text="Attack Type", anchor=tk.CENTER)
@@ -42,9 +44,38 @@ def create_gui():
     tree.column("Interface", minwidth=150, width=150)
     tree.pack(expand=True, fill="both")
 
-
     refresh_table()
 
     root.mainloop()
 
-create_gui()
+
+def gui_thread_wrapper():
+    create_gui()
+
+
+if __name__ == "__main__":
+    create_database()
+    interfaces = psutil.net_if_addrs().keys()
+    print("Available interfaces:", interfaces)
+
+    if interfaces:
+        interface = 'Wi-Fi'
+        print("Sniffing on interface:", interface)
+
+        # Create and start threads for each detection function
+        icmp_thread = threading.Thread(target=icmp_detection_wrapper, args=(interface,))
+        http_thread = threading.Thread(target=http_detection_wrapper, args=(interface,))
+        syn_thread = threading.Thread(target=syn_detection_wrapper, args=(interface,))
+        gui_thread = threading.Thread(target=gui_thread_wrapper)
+
+        icmp_thread.start()
+        http_thread.start()
+        syn_thread.start()
+        gui_thread.start()
+
+        # Join threads to wait for them to complete
+        icmp_thread.join()
+        http_thread.join()
+        syn_thread.join()
+
+        print("Detection complete.")
