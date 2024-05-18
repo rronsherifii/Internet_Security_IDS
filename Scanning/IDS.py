@@ -8,7 +8,7 @@ import time
 icmp_count = defaultdict(int)
 
 def create_database():
-    conn = sqlite3.connect('icmp_data.db')
+    conn = sqlite3.connect('../icmp_data.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS suspicious_icmp
                  (id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -20,7 +20,7 @@ def create_database():
     conn.close()
 
 def save_to_database(attack_type, timestamp, attacker_ip, interface):
-    conn = sqlite3.connect('icmp_data.db')
+    conn = sqlite3.connect('../icmp_data.db')
     c = conn.cursor()
     c.execute("INSERT INTO suspicious_icmp (attack_type, timestamp, attacker_ip, interface) VALUES (?, ?, ?, ?)",
               (attack_type, timestamp, attacker_ip, interface))
@@ -57,7 +57,7 @@ def is_icmp_suspicious(interface):
     return False, None
 
 def print_database():
-    conn = sqlite3.connect('icmp_data.db')
+    conn = sqlite3.connect('../icmp_data.db')
     c = conn.cursor()
     c.execute("SELECT * FROM suspicious_icmp")
     rows = c.fetchall()

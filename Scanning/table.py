@@ -1,9 +1,8 @@
-import sqlite3
 import tkinter as tk
 from datetime import datetime
 from tkinter import ttk
 
-from IDS import print_database
+from Scanning.IDS import print_database
 
 def format_timestamp(timestamp):
     timestamp = int(timestamp)
