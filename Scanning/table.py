@@ -59,7 +59,7 @@ if __name__ == "__main__":
     print("Available interfaces:", interfaces)
 
     if interfaces:
-        interface = 'Wi-Fi'
+        interface = 'WiFi'
         print("Sniffing on interface:", interface)
 
         # Create and start threads for each detection function

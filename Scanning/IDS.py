@@ -11,9 +11,12 @@ icmp_count = defaultdict(int)
 http_requests = defaultdict(int)
 syn_count = defaultdict(int)
 
+http_requests = defaultdict(int)
+src_ip_requests = defaultdict(int)
 threshold = 20  # Duhet me kshyr qfar limiti me i lan
 time_window = 7  # Duhet me kshyr poashtu per limitin -- vlera testuese
 
+syn_count = defaultdict(int)
 SYN_COUNT_THRESHOLD = 10
 TIME_WINDOW = 10
 last_reset_time = time.time()
@@ -93,27 +96,30 @@ def detect_http_flood(interface):
     for packet in capture.sniff_continuously():
         if "HTTP" in packet:
             src_ip = packet.ip.src
-            http_requests[src_ip] += 1
+            src_ip_requests[src_ip] += 1
             http_requests[time.time()] += 1
 
             # Calculate the rate of HTTP requests within the time window
             current_time = time.time()
-            request_count = sum(
-                http_requests[timestamp] for timestamp in http_requests if timestamp >= current_time - time_window)
-            if icmp_count[src_ip] >= 10 and request_count > threshold:
+            request_count = sum(http_requests[timestamp] for timestamp in http_requests if timestamp >= current_time - time_window)
+
+            # Check if the source IP has sent more than 10 requests and if the total request count exceeds the threshold
+            if src_ip_requests[src_ip] >= 10 and request_count > threshold:
                 timestamp = int(time.time())
                 save_to_database("Possible HTTP Flood Attack", timestamp, src_ip, interface)
-                # print("Alert: HTTP Flood Detected! Rate:", request_count, "requests/second")
-    if time.time() - start_time >= 10:
-        # Reset counts for all source IPs
-        http_requests.clear()
-        start_time = time.time()
+                print(f"Alert: HTTP Flood Detected from {src_ip}! Rate: {request_count} requests/second")
+
+        # Periodically clear old requests
+        if time.time() - start_time >= 10:
+            http_requests.clear()
+            src_ip_requests.clear()
+            start_time = time.time()
 
 
 def detect_syn_flood(interface):
     capture = pyshark.LiveCapture(
         interface=interface,
-        display_filter=f'tcp.flags.syn==1 && tcp.flags.ack==0'
+        display_filter='tcp.flags.syn==1 and tcp.flags.ack==0'
     )
     print(f"Sniffing TCP SYN packets on interface {interface}")
 
@@ -129,11 +135,12 @@ def detect_syn_flood(interface):
                 if syn_count[ip_src] > SYN_COUNT_THRESHOLD:
                     timestamp = int(time.time())
                     save_to_database("Possible SYN Flood Attack", timestamp, ip_src, interface)
-                    attacker_ip = ip_src
-    if time.time() - start_time >= 10:
-        # Reset counts for all source IPs
-        syn_count.clear()
-        start_time = time.time()
+                    print(f"Alert: SYN Flood Detected from {ip_src}! Count: {syn_count[ip_src]}")
+
+        # Periodically clear old counts
+        if time.time() - start_time >= 10:
+            syn_count.clear()
+            start_time = time.time()
 
 def icmp_detection_wrapper(interface):
     loop = asyncio.new_event_loop()
