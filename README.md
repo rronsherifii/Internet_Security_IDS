@@ -17,9 +17,13 @@ The web server is run on the Scanner side, using the command *python -m http.ser
 1. **Clone repository**
   Firstly clone the repository using :
   > git clone https://github.com/rronsherifii/Internet_Security_IDS.git
+
   After doing so, move into the Scanning folder with:
   > cd Scanning
+
   When we change directory, we run the main GUI which listens for attacks with:
-  >  python table.py      
+  >  python table.py
+
 2. **Send attacks**
-  To send the attacks move into the *Attacks* directory using **cd**. After that go into the terminal and type **python *attack-type.py* ** 
+  To send the attacks move into the *Attacks* directory using **cd**. After that go into the terminal and type
+ > python *attack-type.py* 
