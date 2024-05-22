@@ -1,127 +1,57 @@
 import socket
 import threading
-import time
-from tkinter import *
+from datetime import datetime
 
-# ==== Scan Vars ====
-log = []
-ports = []
-target = 'localhost'
+def scan_ports(target, start_port, end_port, num_threads=100):
+    # Print a banner with information on the target
+    print("_" * 50)
+    print("Scanning Target: " + target)
+    print("Scanning started at: " + str(datetime.now()))
+    print("_" * 50)
 
-# ==== Scanning Functions ====
-def scanPort(target, port):
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(4)
-        c = s.connect_ex((target, port))
-        if c == 0:
-            m = ' Port %d \t[open]' % (port,)
-            log.append(m)
-            ports.append(port)
-            listbox.insert("end", str(m))
-            updateResult()
-        s.close()
-    except OSError:
-        print('> Too many open sockets. Port ' + str(port))
-    except Exception as e:
-        print(f'Error scanning port {port}: {e}')
-        s.close()
+    # Function to scan a single port
+    def scan_port(port):
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            socket.setdefaulttimeout(0.5)
+            result = s.connect_ex((target, port))
+            if result == 0:
+                print("[*] Port {} is open".format(port))
+            s.close()
+        except socket.error:
+            print(f"Error scanning port {port}")
+        except Exception as e:
+            print(f"Unexpected error scanning port {port}: {e}")
 
-def updateResult():
-    rtext = " [ " + str(len(ports)) + " / " + str(ip_f) + " ] ~ " + str(target)
-    L27.configure(text=rtext)
+    # Function to handle threading for port scanning
+    def threader(ports):
+        for port in ports:
+            scan_port(port)
 
-def startScan():
-    global ports, log, target, ip_f, ip_s
-    clearScan()
-    log = []
-    ports = []
-    # Get ports ranges from GUI
-    ip_s = int(L24.get())
-    ip_f = int(L25.get())
-    # Start writing the log file
-    log.append('> Port Scanner')
-    log.append('=' * 14 + '\n')
-    log.append(' Target:\t' + str(target))
+    # Splitting the range of ports into chunks for threading
+    def split_ports(range_start, range_end, num_chunks):
+        ports = list(range(range_start, range_end + 1))
+        chunk_size = len(ports) // num_chunks
+        return [ports[i * chunk_size:(i + 1) * chunk_size] for i in range(num_chunks)]
 
-    try:
-        target = socket.gethostbyname(str(L22.get()))
-        log.append(' IP Adr.:\t' + str(target))
-        log.append(' Ports: \t[ ' + str(ip_s) + ' / ' + str(ip_f) + ' ]')
-        log.append('\n')
-        # Lets start scanning ports!
-        for port in range(ip_s, ip_f + 1):
-            try:
-                scan = threading.Thread(target=scanPort, args=(target, port))
-                scan.setDaemon(True)
-                scan.start()
-            except Exception as e:
-                print(f'Error starting thread for port {port}: {e}')
-                time.sleep(0.01)
-    except Exception as e:
-        m = f'> Target {L22.get()} not found: {e}'
-        log.append(m)
-        listbox.insert(0, str(m))
+    # Split ports into chunks
+    ports_chunks = split_ports(start_port, end_port, num_threads)
 
-def clearScan():
-    listbox.delete(0, 'end')
+    # Creating threads
+    threads = []
+    for chunk in ports_chunks:
+        thread = threading.Thread(target=threader, args=(chunk,))
+        threads.append(thread)
+        thread.start()
 
-# ==== GUI ====
-gui = Tk()
-gui.title('Port Scanner')
-gui.geometry("400x600+20+20")
+    # Joining threads
+    for thread in threads:
+        thread.join()
 
-# ==== Colors ====
-m1c = '#00ee00'
-bgc = '#222222'
-dbg = '#000000'
-fgc = '#111111'
+    print("Scanning completed at: " + str(datetime.now()))
 
-gui.tk_setPalette(background=bgc, foreground=m1c, activeBackground=fgc,
-                  activeForeground=bgc, highlightColor=m1c, highlightBackground=m1c)
+# Example usage:
+if __name__ == "__main__":
+    target = input("Target IP: ")
+    scan_ports(target, 1, 65535)
 
-# ==== Labels ====
-L11 = Label(gui, text="Port Scanner", font=("Helvetica", 16, 'underline'))
-L11.place(x=16, y=10)
-
-L21 = Label(gui, text="Target: ")
-L21.place(x=16, y=90)
-
-L22 = Entry(gui, text="localhost")
-L22.place(x=180, y=90)
-L22.insert(0, "localhost")
-
-L23 = Label(gui, text="Ports: ")
-L23.place(x=16, y=158)
-
-L24 = Entry(gui, text="1")
-L24.place(x=180, y=158, width=95)
-L24.insert(0, "1")
-
-L25 = Entry(gui, text="1024")
-L25.place(x=290, y=158, width=95)
-L25.insert(0, "1024")
-
-L26 = Label(gui, text="Results: ")
-L26.place(x=16, y=220)
-L27 = Label(gui, text="[ ... ]")
-L27.place(x=180, y=220)
-
-# ==== Ports list ====
-frame = Frame(gui)
-frame.place(x=16, y=275, width=370, height=215)
-listbox = Listbox(frame, width=59, height=6)
-listbox.place(x=0, y=0)
-scrollbar = Scrollbar(frame)
-scrollbar.pack(side=RIGHT, fill=Y)
-listbox.config(yscrollcommand=scrollbar.set)
-scrollbar.config(command=listbox.yview)
-
-# ==== Button ====
-button_width = 170
-button_x = (400 - button_width) // 2
-B11 = Button(gui, text="Start Scan", command=startScan)
-B11.place(x=button_x, y=500, width=button_width)
-
-# ==== Start GUI ====
-gui.mainloop()
