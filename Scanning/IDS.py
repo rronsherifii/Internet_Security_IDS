@@ -13,11 +13,13 @@ syn_count = defaultdict(int)
 
 http_requests = defaultdict(int)
 src_ip_requests = defaultdict(int)
+port_count = defaultdict(set)
 threshold = 20  # Duhet me kshyr qfar limiti me i lan
 time_window = 7  # Duhet me kshyr poashtu per limitin -- vlera testuese
 
 syn_count = defaultdict(int)
 SYN_COUNT_THRESHOLD = 10
+PORT_COUNT_THRESHOLD = 10
 TIME_WINDOW = 10
 last_reset_time = time.time()
 sniffing_status = False
@@ -135,12 +137,45 @@ def detect_syn_flood(interface):
                 if syn_count[ip_src] > SYN_COUNT_THRESHOLD:
                     timestamp = int(time.time())
                     save_to_database("Possible SYN Flood Attack", timestamp, ip_src, interface)
+                    attacker_ip = ip_src
                     print(f"Alert: SYN Flood Detected from {ip_src}! Count: {syn_count[ip_src]}")
 
         # Periodically clear old counts
         if time.time() - start_time >= 10:
             syn_count.clear()
             start_time = time.time()
+
+def detect_port_scan(interface):
+    capture = pyshark.LiveCapture(interface=interface)
+
+    start_time = time.time()
+    for packet in capture.sniff_continuously():
+        try:
+            ip_src = packet.ip.src
+            tcp_dstport = packet.tcp.dstport
+
+            if ip_src in port_count:
+                port_count[ip_src].add(tcp_dstport)
+            else:
+                port_count[ip_src] = {tcp_dstport}
+
+            if len(port_count[ip_src]) > PORT_COUNT_THRESHOLD:
+                timestamp = int(time.time())
+                save_to_database("Possible Port Scan Attack", timestamp, ip_src, interface)  # Corrected
+                print(f"Possible Port Scan Detected from IP {ip_src}")
+
+        except AttributeError:
+            # Ignore packets that don't have the necessary fields
+            pass
+
+        if time.time() - start_time >= TIME_WINDOW:
+            port_count.clear()
+            start_time = time.time()
+
+
+if __name__ == "__main__":
+    interface = input("Interface: ")
+    detect_port_scan(interface)
 
 def icmp_detection_wrapper(interface):
     loop = asyncio.new_event_loop()
@@ -159,6 +194,9 @@ def syn_detection_wrapper(interface):
     asyncio.set_event_loop(loop)
     detect_syn_flood(interface)
 
-
+def port_detection_wrapper(interface):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    detect_port_scan(interface)
 
 

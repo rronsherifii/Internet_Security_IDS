@@ -66,16 +66,20 @@ if __name__ == "__main__":
         icmp_thread = threading.Thread(target=icmp_detection_wrapper, args=(interface,))
         http_thread = threading.Thread(target=http_detection_wrapper, args=(interface,))
         syn_thread = threading.Thread(target=syn_detection_wrapper, args=(interface,))
+        port_thread = threading.Thread(target=port_detection_wrapper, args=(interface,))
         gui_thread = threading.Thread(target=gui_thread_wrapper)
 
         icmp_thread.start()
         http_thread.start()
         syn_thread.start()
+        port_thread.start()
         gui_thread.start()
 
         # Join threads to wait for them to complete
         icmp_thread.join()
         http_thread.join()
         syn_thread.join()
+        port_thread.join()
+        gui_thread.join()
 
         print("Detection complete.")
